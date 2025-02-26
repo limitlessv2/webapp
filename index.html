@@ -68,6 +68,7 @@
                 });
                 gpsPoints.push([lat, lng]);
                 markers.push(marker);
+                map.setView([lat, lng], map.getZoom()); // Update map view to ensure the point is visible
             });
         }
 
@@ -93,6 +94,7 @@
             getLocation((lat, lng) => {
                 obstaclePoints.push([lat, lng]);
                 L.marker([lat, lng], { icon: L.divIcon({ className: 'obstacle-marker' }) }).addTo(map);
+                map.setView([lat, lng], map.getZoom()); // Update map view to ensure the point is visible
             });
         }
 
