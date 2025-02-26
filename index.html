@@ -1,0 +1,129 @@
+import React, { useState, useEffect } from 'react';
+import { View, Button, Text, StyleSheet } from 'react-native';
+import MapView, { Marker, Polygon } from 'react-native-maps';
+import * as Location from 'expo-location';
+
+export default function App() {
+  const [location, setLocation] = useState(null);
+  const [gpsPoints, setGpsPoints] = useState([]);
+  const [polygon, setPolygon] = useState([]);
+  const [obstacles, setObstacles] = useState([]);
+  const [editingObstacle, setEditingObstacle] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied');
+        return;
+      }
+      
+      let currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation(currentLocation.coords);
+    })();
+  }, []);
+
+  const addPoint = () => {
+    if (location) {
+      setGpsPoints([...gpsPoints, { latitude: location.latitude, longitude: location.longitude }]);
+    }
+  };
+
+  const savePolygon = () => {
+    if (gpsPoints.length < 3) {
+      alert('A polygon needs at least 3 points');
+      return;
+    }
+    setPolygon([...gpsPoints, gpsPoints[0]]); // Closing the polygon
+  };
+
+  const addObstaclePoint = () => {
+    if (location) {
+      setEditingObstacle([...editingObstacle, { latitude: location.latitude, longitude: location.longitude }]);
+    }
+  };
+
+  const saveObstacle = () => {
+    if (editingObstacle.length < 3) {
+      alert('An obstacle needs at least 3 points');
+      return;
+    }
+    setObstacles([...obstacles, [...editingObstacle, editingObstacle[0]]]); // Closing the obstacle polygon
+    setEditingObstacle([]);
+  };
+
+  const exportData = (format) => {
+    let data;
+    if (format === 'geojson') {
+      data = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [gpsPoints.map(pt => [pt.longitude, pt.latitude])],
+            },
+            properties: { name: 'Main Area' },
+          },
+          ...obstacles.map((obstacle, index) => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [obstacle.map(pt => [pt.longitude, pt.latitude])],
+            },
+            properties: { name: `Obstacle ${index + 1}` },
+          })),
+        ],
+      };
+    } else if (format === 'csv') {
+      data = 'latitude,longitude\n' + gpsPoints.map(pt => `${pt.latitude},${pt.longitude}`).join('\n');
+    } else {
+      data = JSON.stringify({
+        area: gpsPoints,
+        obstacles: obstacles,
+      }, null, 2);
+    }
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `area.${format}`;
+    a.click();
+  };
+
+  return (
+    <View style={styles.container}>
+      <MapView style={styles.map} initialRegion={{
+        latitude: location?.latitude || 37.7749,
+        longitude: location?.longitude || -122.4194,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }}>
+        {location && <Marker coordinate={location} title='Your Location' />}
+        {gpsPoints.map((point, index) => (
+          <Marker key={index} coordinate={point} pinColor='blue' />
+        ))}
+        {polygon.length > 0 && <Polygon coordinates={polygon} fillColor='rgba(0, 255, 0, 0.3)' />}
+        {obstacles.map((obstacle, idx) => (
+          <Polygon key={idx} coordinates={obstacle} fillColor='rgba(255, 0, 0, 0.3)' />
+        ))}
+      </MapView>
+      <View style={styles.controls}>
+        <Button title='Add Point' onPress={addPoint} />
+        <Button title='Save Polygon' onPress={savePolygon} />
+        <Button title='Add Obstacle Point' onPress={addObstaclePoint} />
+        <Button title='Save Obstacle' onPress={saveObstacle} />
+        <Button title='Download GeoJSON' onPress={() => exportData('geojson')} />
+        <Button title='Download CSV' onPress={() => exportData('csv')} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  map: { flex: 1 },
+  controls: { flexDirection: 'row', justifyContent: 'space-around', padding: 10, backgroundColor: '#fff' },
+});
