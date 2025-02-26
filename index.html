@@ -36,11 +36,21 @@
 
         function getLocation(callback) {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    let lat = position.coords.latitude;
-                    let lng = position.coords.longitude;
-                    callback(lat, lng);
-                }, () => alert("Geolocation is not supported or denied."));
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        let lat = position.coords.latitude;
+                        let lng = position.coords.longitude;
+                        callback(lat, lng);
+                    },
+                    (error) => {
+                        if (error.code === error.PERMISSION_DENIED) {
+                            alert("Location access denied. Please enable it in Safari Settings.");
+                        } else {
+                            alert("Geolocation error: " + error.message);
+                        }
+                    },
+                    { enableHighAccuracy: true }
+                );
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
