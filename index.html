@@ -21,6 +21,7 @@
         <button onclick="saveObstacle()">Save Obstacle</button>
         <button onclick="downloadData('geojson')">Download GeoJSON</button>
         <button onclick="downloadData('csv')">Download CSV</button>
+        <button onclick="removeLastPoint()">Remove Last Point</button>
     </div>
 
     <script>
@@ -68,6 +69,14 @@
                 gpsPoints.push([lat, lng]);
                 markers.push(marker);
             });
+        }
+
+        function removeLastPoint() {
+            if (markers.length > 0) {
+                let marker = markers.pop();
+                map.removeLayer(marker);
+                gpsPoints.pop();
+            }
         }
 
         function savePolygon() {
