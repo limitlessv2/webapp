@@ -30,6 +30,7 @@
         }).addTo(map);
 
         let gpsPoints = [];
+        let markers = [];
         let polygonLayer = null;
         let obstaclePoints = [];
         let obstacles = [];
@@ -58,8 +59,14 @@
 
         function addPoint() {
             getLocation((lat, lng) => {
+                let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                marker.on('dragend', function(event) {
+                    let index = markers.indexOf(marker);
+                    let newLatLng = event.target.getLatLng();
+                    gpsPoints[index] = [newLatLng.lat, newLatLng.lng];
+                });
                 gpsPoints.push([lat, lng]);
-                L.marker([lat, lng]).addTo(map).bindPopup(`Point ${gpsPoints.length}`).openPopup();
+                markers.push(marker);
             });
         }
 
@@ -123,4 +130,3 @@
     </script>
 </body>
 </html>
-
