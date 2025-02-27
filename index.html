@@ -22,6 +22,7 @@
         <button onclick="downloadData('geojson')">Download GeoJSON</button>
         <button onclick="downloadData('csv')">Download CSV</button>
         <button onclick="removeLastPoint()">Remove Last Point</button>
+        <button onclick="clearAllPoints()">Clear All Points</button>
     </div>
 
     <script>
@@ -68,7 +69,7 @@
                 });
                 gpsPoints.push([lat, lng]);
                 markers.push(marker);
-                map.setView([lat, lng], map.getZoom()); // Update map view to ensure the point is visible
+                map.setView([lat, lng], map.getZoom()); // Ensure the point is visible
             });
         }
 
@@ -78,6 +79,16 @@
                 map.removeLayer(marker);
                 gpsPoints.pop();
             }
+        }
+
+        function clearAllPoints() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            gpsPoints = [];
+            if (polygonLayer) map.removeLayer(polygonLayer);
+            polygonLayer = null;
+            obstacles = [];
+            obstaclePoints = [];
         }
 
         function savePolygon() {
@@ -94,7 +105,7 @@
             getLocation((lat, lng) => {
                 obstaclePoints.push([lat, lng]);
                 L.marker([lat, lng], { icon: L.divIcon({ className: 'obstacle-marker' }) }).addTo(map);
-                map.setView([lat, lng], map.getZoom()); // Update map view to ensure the point is visible
+                map.setView([lat, lng], map.getZoom()); // Ensure the point is visible
             });
         }
 
